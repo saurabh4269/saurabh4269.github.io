@@ -1,26 +1,20 @@
 import AppPageEntry from "../page";
-import { generateStaticParams as getStaticParams } from "@/shared/utils/generateStaticParams";
+import getAppPage from "@/components/cards/app-page/data/get-object";
 
-// Use the centralized generateStaticParams function
-// export { getStaticParams as generateStaticParams };
+export async function generateStaticParams() {
+  const appPages = [
+    { id: 'gymtracker', sub: 'privacy' },
+    { id: 'gymtracker', sub: 'terms' },
+    { id: 'radio', sub: 'privacy' },
+    { id: 'radio', sub: 'terms' },
+    { id: 'arabic-stories', sub: 'privacy' },
+    { id: 'arabic-stories', sub: 'terms' },
+  ];
 
-export async function generateStaticParams(): Promise<{ id: string; sub: string }[]> {
-    // Replace these with your actual dynamic values or fetch them from an API
-    const ids = ['id1', 'id2', 'id3'];
-    const subs = ['sub1', 'sub2', 'sub3'];
-  
-    // Explicitly type the params array
-    const params: { id: string; sub: string }[] = [];
-  
-    // Generate all possible combinations of id and sub
-    ids.forEach(id => {
-      subs.forEach(sub => {
-        params.push({ id, sub });
-      });
-    });
-  
-    return params;
-  }
+  return appPages.map(({ id, sub }) => ({
+    id,
+    sub,
+  }));
+}
 
 export default AppPageEntry;
-  

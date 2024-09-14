@@ -1,10 +1,10 @@
 import AppPage from "@/components/cards/app-page/app-page";
 import getAppPage from "@/components/cards/app-page/data/get-object";
 import NotFound from "@/components/other/404";
-import { generateStaticParams as getStaticParams } from "@/shared/utils/generateStaticParams";
 
-// Use the centralized generateStaticParams function
-export { getStaticParams as generateStaticParams };
+export async function generateStaticParams() {
+  return ['gymtracker', 'radio', 'arabic-stories'].map(id => ({ id }));
+}
 
 export default function AppPageEntry({ params }: { params: { id: string } }) {
   const { id } = params;
