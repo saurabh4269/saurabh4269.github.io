@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from 'react';
 import MailIcon from "@/assets/icons/mail";
 import { mail } from "@/constants/strings";
 import CardTitle from "@/shared/components/titles/card-title";
@@ -40,9 +41,9 @@ export default function Contact() {
       <form onSubmit={handleSubmit} className={cardStyle + " gap-7"}>
         <CardTitle title="CONTACT" icon={<MailIcon />} />
         <p className="text-md pb-1">
-          <a className="opacity-70">
+          <span className="opacity-70">
             Contact me by filling out the form below, or by sending to{" "}
-          </a>
+          </span>
           <a
             className="hover:underline font-medium opacity-70 dark:!opacity-80"
             href={"mailto:" + mail}
@@ -68,6 +69,7 @@ export default function Contact() {
           required
           isTextArea
           id="message"
+          type="text"
           minLength={5}
           maxLength={10000}
           rows={3}
