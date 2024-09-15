@@ -12,7 +12,7 @@ const mail = "saurabhgupta0342@gmail.com";
 const description = `${author}. Explore my personal portfolio, services and blogs.`;
 const og = `${url}/og.png`;
 const shortAbout =
-  "An entrepreneurial student at IIT Bombay with interests in entrepreneurship, finance, robotics and coding.";
+  "An tinkerer at heart, with interests in entrepreneurship, finance, robotics and coding.";
 const about =
   "A tinkerer at heart, I love to create new things, and have passion for entrepreneurship, finance, robotics and coding. I aim to contribute and drive meaningful outcomes. Eager to collaborate with like-minded people in entrepreneurial opportunities.";
 
