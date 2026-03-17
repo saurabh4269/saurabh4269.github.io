@@ -1,0 +1,81 @@
+---
+title: "Broke-O-Meter: How a Broke Friend Led Me to Zero-Knowledge Proofs"
+publishedAt: "2026-03-17"
+updatedAt: "2026-03-17"
+author: "Saurabh Gupta"
+summary: "Police caught me on Juhu beach with ₹70 in my wallet. My most reliable guy had less than ₹50 in his account. So I built a cryptographic proof of poverty."
+image: "/blog/brokr_o_meter.mp4"
+---
+
+Police caught me on Juhu beach. He asked me for a fine. I showed him my wallet. ₹70. That's it.
+
+"I can call my friends," I said. Maybe someone can help.
+
+So I called Sunny Balwani, my most reliable guy. His reply, verbatim:
+
+> "Bhai, pachaas rupaye bhi nhi hain mere account me yaar"
+> *(Translation: "Bhai, I don't even have 50 bucks in my account right now.")*
+
+## The Pattern
+
+Now here's the thing about Sunny. Every. Single. Time. it's time to pay, Sunny is broke.
+
+Dine out split? Broke.
+Daman trip split? Broke.
+UPI request for ₹42? "Bank server is down, yaar."
+
+And I always wonder: is he actually broke? Or is he just... Sunny Balwani-ing me?
+
+(The name is not a coincidence.)
+
+I couldn't ask to see his bank statement. That's weird. That crosses a line.
+
+So I built an app instead.
+
+<video controls className="w-full h-auto">
+  <source src="/blog/brokr_o_meter.mp4" type="video/mp4" />
+</video>
+
+## The Idea
+
+It uses Zero-Knowledge Proofs. Sunny can cryptographically prove his balance is below ₹100, without ever showing me his balance, account number, or any transaction.
+
+You verify the claim. Without seeing the secret.
+
+The math says: *"Yes, this person is genuinely broke."*
+
+And you have to believe it, not because you trust Sunny, but because you trust the proof.
+
+## The Bigger Picture
+
+Same technology. Wildly different use cases.
+
+You want to enter a club. The bouncer needs to verify you're 18+. With ZKP, you prove your age without showing your Aadhaar. No name. No DOB. No address. Just: *"Yes, this person is above 18."*
+
+A food delivery app wants to verify your location. With ZKP, you prove you're within 50 metres of the restaurant without sharing your exact GPS coordinates.
+
+Getting a loan? Prove your credit score clears the threshold, without surrendering your entire financial life to a banker.
+
+The pattern is always the same: prove the claim, protect the data.
+
+We spend so much time solving "how do I share data?" ZKP flips the question: how do I prove something is true, without sharing the data at all?
+
+That's the foundation of private identity verification, fraud detection, financial audits, and healthcare data sharing. Anywhere the data is sensitive but the proof is necessary.
+
+## The Caveats (Being Honest)
+
+The demo has an intentional trust loophole: screenshots can be edited, backdated, or belong to someone else entirely. Users can also modify the extracted amount after OCR before generating a proof.
+
+A real implementation would integrate with India's Account Aggregator framework, where balance data is pulled directly from the bank with no room for forgery.
+
+Also worth being upfront about: this is simulated ZK, not a full zk-SNARK circuit. The commitment-and-hash flow is cryptographically sound for this specific claim, but it does not carry the formal guarantees of systems like Groth16 or PLONK.
+
+## Try It
+
+The technology exists. It just needed a Sunny to make it relatable.
+
+I called it [Broke-O-Meter](https://broke.heisenbug.ai/).
+
+Send a ZK-Proof of Poverty, or pay up.
+
+If you have a Sunny in your life, the app is for you. If you're building in Web3 or privacy tech, the concept is for you. And if you ARE Sunny, maybe it's time to just pay the ₹42.
