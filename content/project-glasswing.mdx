@@ -1,0 +1,94 @@
+---
+title: "The Vulnerability That Survived 5 Million Fuzz Tests"
+publishedAt: "2026-04-08"
+updatedAt: "2026-04-08"
+author: "Saurabh Gupta"
+summary: "Anthropic's Project Glasswing deployed a frontier AI model that found thousands of zero-day vulnerabilities overnight. The more significant story is what they chose to do with it."
+image: "/blog/project_glasswing.gif"
+---
+
+A bug sat in FFmpeg for 16 years. Security researchers ran 5 million fuzzing attempts against it. None found it.
+
+An AI model found it overnight.
+
+That is the opening act of Project Glasswing, Anthropic's new initiative to deploy Claude Mythos Preview, their latest frontier model, as a defensive cybersecurity tool before its capabilities become a liability in the wrong hands.
+
+## What the Model Found
+
+Claude Mythos Preview was not built as a security scanner. It is a general frontier model. But when Anthropic's engineers, none of whom had formal security training, prompted it to look for remote code execution vulnerabilities, it did not return a list of suggestions. It returned working exploits.
+
+By morning, they had findings across every major operating system, browser, cryptography library, and virtual machine monitor. Among them:
+
+A remote crash vulnerability in OpenBSD that had been sitting undetected for 27 years. OpenBSD is considered one of the most security-hardened operating systems in existence. Its entire design philosophy is built around eliminating exactly this kind of flaw. The bug survived three decades of expert review.
+
+The FFmpeg out-of-bounds write mentioned above. Sixteen years old. Five million fuzzing attempts. One AI query.
+
+A remote code execution bug in FreeBSD's NFS server (CVE-2026-4747), 17 years old, that allows an unauthenticated attacker anywhere on the internet to gain full root access to the affected system.
+
+Privilege escalation chains in the Linux kernel that chain race conditions and use-after-free bugs together into a path to root access.
+
+There are more still under coordinated disclosure. Anthropic has published cryptographic hashes of the findings for accountability, so the timeline of discovery cannot later be disputed.
+
+<MediaContainer
+  src="/blog/project_glasswing.gif"
+  alt="Project Glasswing — Claude Mythos Preview vulnerability discovery"
+  className="w-full h-auto"
+/>
+
+The benchmark number that summarizes all of this: Mythos Preview scores 83.1% on CyberGym vulnerability reproduction. The previous best was 66.6%. That is not an incremental improvement. It is a different regime.
+
+## The Decision
+
+Here is where the story becomes interesting, and where most coverage will miss the point.
+
+Anthropic is sitting on a model capable of finding exploits that no human researcher caught in decades, exploits in systems that millions of people depend on every day. The obvious commercial path is to release it. Security is a massive market. Defenders would pay for this. Attackers would find ways to access it regardless.
+
+They chose not to release it.
+
+Instead, Project Glasswing deploys Mythos Preview through a controlled coalition: 12 founding partners including AWS, Microsoft, Google, Cisco, CrowdStrike, Apple, and NVIDIA, with over 40 additional organizations maintaining critical open-source software getting access to scan their own systems. The model is not publicly available. Access is scoped to finding and patching vulnerabilities in systems you are responsible for maintaining.
+
+Anthropic is backing this with up to $100 million in compute credits and $4 million in direct donations to open-source security organizations. The Linux Foundation gets access. The maintainers of libraries that underpin most of the internet, people who have been working without resources for decades, get access to a tool that is better at finding bugs in their own code than anything they have ever had.
+
+Cisco described it as a threshold moment, too urgent to address alone. That is not marketing language. That is an organization telling you they understand the asymmetry of what just happened.
+
+## What Changed
+
+Software has always had bugs. The security field has always known this. The implicit understanding was that finding the dangerous ones, particularly the ones that chain together into full remote code execution, required rare expertise, significant time, and years of accumulated intuition. Elite red teams. Expensive engagements. Months of manual work.
+
+That constraint was a form of protection, imperfect, but real. Most vulnerabilities persisted not because no one could find them, but because the number of people capable of finding them was small enough that most systems never got looked at carefully. A 27-year-old bug in OpenBSD survived because OpenBSD, despite being widely used in security contexts, is not a high-value enough target to justify the weeks of expert time it would have taken.
+
+AI removes that constraint for everyone. A model that can find root access chains in the Linux kernel does not have more hours in the day than a human expert. It has essentially unlimited parallel capacity. It does not need years of training to recognize a use-after-free pattern. And critically, it is not only available to defenders.
+
+The offense-defense balance in cybersecurity has always been asymmetric. Defenders have to protect everything. Attackers only have to find one door. What changes now is the speed at which that door gets found, and the level of expertise required to find it.
+
+## What a Head Start Looks Like
+
+Project Glasswing is worth paying attention to not because of the benchmark numbers, though 83.1% on CyberGym is remarkable, but because of what it represents as a model for how to handle this kind of capability.
+
+The vulnerabilities Mythos Preview found will get patched. The cryptographic hashes Anthropic published mean the findings are timestamped and accountable. The coalition structure means the patching can happen at scale, coordinated across the organizations that actually maintain the systems in question.
+
+None of this prevents the eventual proliferation of AI-assisted offensive security research. It does not even delay it by much. Models like this will eventually be accessible, through fine-tuning, through open-weight releases from other labs, through adversarial access. The window between Anthropic finding these bugs and attackers having equivalent capability is finite.
+
+What Glasswing buys is a head start in the patching queue. A 27-year-old OpenBSD bug found and patched before it is weaponized is a different outcome than a 27-year-old bug found by someone with different intentions.
+
+The Linux Foundation's framing is the most honest description of what is actually new here: open-source maintainers have never had access to tools like this. Those maintainers have been holding up the infrastructure of the internet on essentially volunteer labor, with fuzzing tools and static analyzers and whatever they could afford. The gap between what they have had access to and what well-resourced adversaries have had access to has been widening for years.
+
+That gap just narrowed.
+
+## The Part That Stays With Me
+
+Anthropic engineers with no formal security training prompted a model overnight and woke up to a complete, working exploit.
+
+Not a hint. Not a lead. A working exploit.
+
+The expertise barrier that protected most systems, not because they were secure, but because finding their weaknesses was hard enough that most attackers moved on, is gone. What remains is whether the patching infrastructure, the disclosure processes, the maintainer networks, the corporate security teams, can move fast enough to use the same tools before everyone else does.
+
+Project Glasswing is a bet that the answer is yes, and that a coordinated head start matters more than the capability staying private.
+
+It probably does. And it probably won't stay that way for long.
+
+The race between offense and defense in security is not new. But a model that finds 16-year-old bugs in a single overnight session changes the speed at which that race runs.
+
+What we do with the head start matters. The bugs that get patched in the next six months matter. The open-source maintainers who now have access to something they never had before matter.
+
+We are early in understanding what this shift means. But we are not early enough to pretend it has not happened.
