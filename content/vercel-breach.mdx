@@ -1,0 +1,82 @@
+---
+title: "The Vercel Breach Started With an AI Tool Someone on Their Team Was Using"
+publishedAt: "2026-04-20"
+updatedAt: "2026-04-20"
+author: "Saurabh Gupta"
+summary: "Vercel was breached not through a zero-day or a sophisticated infrastructure attack. It started with one employee using an AI tool that had already been compromised. That's a scenario most teams live with every day."
+image: "/blog/vercel_breach.png"
+---
+
+The entry point was not a zero-day.
+
+It was not a sophisticated attack on Vercel's core infrastructure. It was not a cryptographic failure or an unpatched CVE. It was an AI tool someone on their team was using.
+
+In February, a Context.ai employee was infected with Lumma Stealer malware. That infection compromised Context.ai itself. A Vercel employee happened to be using Context.ai. Through that breach, attackers were able to take over the Vercel employee's Google Workspace account, pivot into Vercel's internal environments, and enumerate environment variables across customer configurations.
+
+Vercel's CEO Guillermo Rauch described the attackers as "highly sophisticated and significantly accelerated by AI," moving with surprising speed and depth through internal systems. A threat actor has since posted on BreachForums claiming to sell stolen data for $2 million: API keys, GitHub and NPM tokens, source code, and employee account data.
+
+<MediaContainer
+  src="/blog/vercel_breach.png"
+  alt="Vercel breach attack chain diagram"
+  className="w-full h-auto"
+/>
+
+## How It Actually Works
+
+Lumma Stealer is not novel malware. It is a commodity infostealer available cheaply on cybercrime forums, widely deployed, and designed to do one thing efficiently: extract browser-stored credentials, session cookies, and saved passwords from an infected machine.
+
+When the Context.ai employee's device was compromised, Lumma would have harvested whatever authentication material was sitting in the browser. OAuth tokens. Session cookies. Credentials cached from recent logins. The kind of thing that, once extracted, lets an attacker authenticate as you without ever needing your password.
+
+From there, the chain is straightforward. A Vercel employee using Context.ai had granted it some level of access, as you do with any third-party tool you plug into your workflow. When Context.ai was compromised, that access became a vector. The attacker moved from Context.ai into the Vercel employee's Google Workspace account. From Google Workspace, they moved into Vercel's internal environments. From there, they could see environment variables across customer deployments.
+
+Each step followed the trust that already existed. No doors were forced open. They walked through ones that were already unlocked.
+
+## What Was Exposed
+
+Environment variables are where the sensitive material lives in modern deployment infrastructure. API keys. Database credentials. Signing tokens. Webhook secrets. The credentials that let your application talk to Stripe, to AWS, to your database, to every external service you depend on.
+
+Vercel has a "sensitive" variable designation that encrypts values and prevents them from being read after they are set. Variables not marked sensitive are readable. The breach exposed those.
+
+The reaction across the developer community has been unanimous: rotate everything, now. That instinct is correct. "Non-sensitive" in Vercel's classification means visible in the dashboard, not harmless in practice. An API key is an API key regardless of how it was labeled.
+
+Crypto and Web3 developers are particularly exposed. Many DeFi frontends and wallet interfaces run on Vercel. Leaked signing keys in that context are not just a credential problem. They are a funds problem.
+
+## What To Do Right Now
+
+If you are on Vercel, the immediate steps are not complicated but they cannot wait.
+
+**Rotate all environment variables.** Especially anything not marked as sensitive. Assume anything that could have been read was read.
+
+**Check Google Workspace for the malicious OAuth app and revoke it.** The client ID is `110671459871-30f1spbu0hptbs60cb4vsmv79i7bbvqj.apps.googleusercontent.com`. If this app has access to your organization's Workspace, remove it immediately.
+
+**Regenerate GitHub and NPM tokens** connected to Vercel. Any token that touched the compromised environment should be treated as compromised.
+
+**Audit recent build logs and deployment activity** for anything that looks unfamiliar. The attackers moved fast; look for unusual access patterns in the window around when this became public.
+
+**Enable the sensitive variable feature going forward** and set Deployment Protection to Standard. These are not retroactive fixes, but they raise the floor for future incidents.
+
+## The Broader Problem
+
+What stings about this breach is not the scale. It is the ordinariness of it.
+
+One employee. One AI tool. One compromised third-party that nobody at Vercel had visibility into. The entire attack surface was created by normal behavior, the kind of behavior that happens at every company building software today.
+
+We are all moving fast with AI integrations right now. A new tool promises to speed up some part of the workflow. You OAuth it in, grant the scopes it asks for, and move on. Most teams are not auditing what that integration can touch, what happens if the vendor gets breached, or what the blast radius looks like if a session token from that tool ends up in the wrong hands.
+
+Every AI tool you plug into your workflow inherits trust. The OAuth scopes granted to a third-party app are not just permissions on a settings screen. They are a direct path from whatever happens to that vendor into your infrastructure.
+
+Context.ai did not have to be the weak link. Any third-party tool with access to your Google Workspace, your GitHub, your Slack, is a potential pivot point if it gets compromised. The question is not whether you trust the tool. It is whether you trust every employee at the company that built it, every device they use, and every dependency those devices have.
+
+That is a much larger surface than most teams are accounting for.
+
+## The Asymmetry
+
+Rauch's description of the attackers as "significantly accelerated by AI" is worth sitting with. The defenders in this situation were moving at human speed, discovering the breach after the fact, notifying customers, and recommending rotations. The attackers were using AI to enumerate systems and move through internal environments faster than any human-paced intrusion.
+
+That asymmetry is not going away. The same tools that make legitimate security research faster also make attackers faster. The difference is that defenders have to protect the entire perimeter while attackers only have to find one employee using one compromised tool.
+
+The Vercel breach is a useful reminder that the perimeter is no longer defined by your own infrastructure. It extends through every tool your team uses, every vendor those tools rely on, and every device any of those employees have ever touched.
+
+Doing the audit yourself is annoying. Rotating credentials takes time. Reviewing OAuth grants is tedious.
+
+It is considerably less annoying than having someone else do it for you.
