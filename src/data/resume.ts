@@ -157,6 +157,18 @@ export const resume: ResumeData = {
   },
   work: [
     {
+      company: "OWASP® Foundation",
+      href: "https://owasp.org/",
+      badges: ["GSoC 2026"],
+      location: "Wilmington, Delaware, United States · Remote",
+      title: "Open Source Developer",
+      logoUrl: "/owasp.webp",
+      start: "May 2026",
+      end: "Present",
+      description:
+        "Selected as a Google Summer of Code 2026 contributor with the OWASP Foundation to overhaul the HTTPS interception layer in OWTF (Offensive Web Testing Framework). Working on modernizing the proxy architecture to improve reliability, extensibility, and compatibility with contemporary web security testing workflows.",
+    },
+    {
       company: "Heisenbug",
       href: "https://www.heisenbug.ai/",
       badges: ["Founder"],
