@@ -1,0 +1,104 @@
+---
+title: "I built an AI agent that tells you which outdated dependency will actually hurt you"
+publishedAt: "2026-06-25"
+summary: "Every dependency scanner gives you a flat list. None tell you which package is on your login path. I built a GitLab Duo agent that uses the Orbit knowledge graph to compute blast radius per dependency — and files a prioritised advisory issue automatically."
+tags: ["AI", "GitLab", "Hackathon", "DevSecOps", "Agentic"]
+---
+
+Every project has a `package.json` graveyard. Four outdated packages. Eight CVE notices. A tired developer who upgrades lodash because it's at the top of the list — not because it matters.
+
+The scanner gave you a list. It didn't give you a decision.
+
+That's the problem I spent this hackathon solving.
+
+## The insight
+
+There's a difference between a dependency being outdated and a dependency being *dangerous*.
+
+`axios` pinned at 0.21.3 with a full major lag, carrying SSRF and credential-leak CVEs, sitting on your network/HTTP path — that's dangerous. `debug` running one minor behind with no CVEs, imported only in a development util — that's noise.
+
+Both show up in the same flat scanner output. Most teams fix `debug` first because it's the smallest diff.
+
+The question isn't "which packages are outdated?" It's "which outdated packages are on paths that matter?"
+
+Answering that requires knowing the shape of your codebase — not just its manifest.
+
+## What GitLab's Orbit graph changes
+
+GitLab's Orbit knowledge graph indexes your repository as a semantic graph: files, functions, import relationships, call chains, service boundaries. It's queryable via `query_graph`, and that changes what's possible.
+
+Instead of asking "what imports lodash?", you can ask:
+
+> *"What services import this package, and are any of those services on the authentication path?"*
+
+That traversal — package → importer → service → criticality — is what turns a flat dependency list into a ranked action plan.
+
+## The agent
+
+I built a Duo Agent Flow called **Dependency Aging Advisor**. It lives in the [GitLab AI Catalog](https://gitlab.com/explore/ai-catalog/flows/1012024/) and runs on any Orbit-indexed project.
+
+The trigger is one comment on any issue:
+
+```
+@ai-dependency-aging-advisor run the dependency aging audit
+```
+
+That's it. The agent then:
+
+1. **Calls `get_graph_schema`** to understand the project's topology
+2. **Calls `query_graph` four times** — one traversal per outdated dependency — to find every file and service that imports it
+3. **Calls `list_vulnerabilities`** to pull live CVE data
+4. **Computes a blast radius score** combining: import depth, service criticality, CVE severity, version lag
+5. **Files a structured advisory issue** with three buckets: *Act this month*, *Track*, *Ignore*
+
+No configuration. No YAML to write. No CI job to add. Just the mention.
+
+## The advisory issue it filed
+
+Here's what it produced on the test repository — [issue #2](https://gitlab.com/gitlab-ai-hackathon/transcend/20182084/-/work_items/2), filed automatically by the AI service account:
+
+**Act this month**
+
+| Dependency | Risk | Blast radius | Why |
+|---|---|---|---|
+| `axios` | 7.25 | 7 — CORE (network/HTTP path) | Pinned at 0.21.3. Carries CVE-2021-3749 (SSRF) and CVE-2023-45857 (credential header leak). Network-facing import path amplifies exploitability. |
+| `bcrypt` | 5.0 | 10 — CRITICAL (auth path) | No CVE today, but its sole importer is `verifyPassword()` on the login path. Any future CVE here immediately becomes act-this-week severity. |
+
+**Track**
+
+| Dependency | Risk | Blast radius | Why |
+|---|---|---|---|
+| `lodash` | 4.6 | 2 — PERIPHERAL | Carries CVE-2021-23337 (command injection). Import graph found no active usage in indexed source files. |
+
+**Ignore**
+
+`debug` — no CVE, one minor version behind, dev-only usage.
+
+Same four packages. Completely different priorities. That's the point.
+
+## The engine
+
+The core is [`orbit_client.py`](https://gitlab.com/gitlab-ai-hackathon/transcend/20182084/-/blob/main/engine/orbit_client.py) — 400 lines of Python stdlib. No external dependencies. Dual auth (PRIVATE-TOKEN + Bearer), project-scoped traversal via `traversal_path`, and a graceful ripgrep fallback for when Orbit isn't available.
+
+The test suite runs six scenarios against a fixture npm app with intentionally outdated packages. All six pass.
+
+The CI pipeline schedules it weekly so the advisory stays current without anyone having to remember to run it.
+
+## What I learned building this
+
+**The graph is the unlock.** The difference between "which packages are outdated" and "which packages will hurt you" is entirely about topology. `query_graph` makes that traversal cheap. Without it, you'd need static analysis tooling, custom AST parsing, and a lot of project-specific configuration. With it, you write a prompt.
+
+**Blast radius is a better unit than CVE score.** CVSS scores are decontextualised. A CVSS 9.8 on a package that only runs in a weekend batch job is less urgent than a CVSS 5.0 on something sitting on your login path. The agent scores both dimensions and lets them interact.
+
+**The @mention interface is underrated.** I almost added a CLI. I almost added a dashboard. The right answer was: one comment, in the place developers already are, producing output in the same place. No friction, no context switch, no new tool to learn.
+
+**Agentic doesn't mean autonomous.** The agent doesn't patch anything. It doesn't open PRs. It files an issue with the evidence and the reasoning, and a human makes the call. That's the right boundary — automate the research, not the consequence.
+
+## Links
+
+- **Repo**: [gitlab.com/gitlab-ai-hackathon/transcend/20182084](https://gitlab.com/gitlab-ai-hackathon/transcend/20182084)
+- **AI Catalog**: [gitlab.com/explore/ai-catalog/flows/1012024](https://gitlab.com/explore/ai-catalog/flows/1012024/)
+- **Live advisory**: [Issue #2 — filed by the agent](https://gitlab.com/gitlab-ai-hackathon/transcend/20182084/-/work_items/2)
+- **Engine**: [`orbit_client.py`](https://gitlab.com/gitlab-ai-hackathon/transcend/20182084/-/blob/main/engine/orbit_client.py)
+
+The flow is public and enabled on any Orbit-indexed project with a single click. If you run it on your repo, I'd be curious what it finds.
