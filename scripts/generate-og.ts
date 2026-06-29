@@ -1,18 +1,25 @@
 import satori from "satori";
 import sharp from "sharp";
-import { readFileSync } from "fs";
+import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { jsx } from "react/jsx-runtime";
-
-const DATA = {
-  name: "Saurabh Gupta",
-  description:
-    "Co-Founder @Heisenbug | Building agentic compliance solutions | Obsessed with systems that work in the real world",
-};
+import { resume } from "../src/data/resume";
 
 async function generateOGImage() {
   const fontPath = join(process.cwd(), "public/fonts/CabinetGrotesk-Medium.ttf");
-  const avatarPath = join(process.cwd(), "public/me.png");
+  const avatarFile = resume.personal.avatar.replace(/^\//, "");
+  const avatarPath = join(process.cwd(), "public", avatarFile);
+  const resolvedAvatarPath = existsSync(avatarPath)
+    ? avatarPath
+    : (() => {
+        const extensions = ["png", "jpg", "jpeg", "webp", "gif"];
+        const base = avatarFile.replace(/\.[^.]+$/, "");
+        for (const ext of extensions) {
+          const p = join(process.cwd(), "public", `${base}.${ext}`);
+          if (existsSync(p)) return p;
+        }
+        return null;
+      })();
   const outputPath = join(process.cwd(), "public/og.png");
 
   const fontBuffer = readFileSync(fontPath);
@@ -22,11 +29,17 @@ async function generateOGImage() {
   );
 
   let avatarBuffer: Buffer | null = null;
-  try {
-    avatarBuffer = readFileSync(avatarPath);
-  } catch {
-    console.log("Avatar not found");
+  if (resolvedAvatarPath) {
+    try {
+      avatarBuffer = readFileSync(resolvedAvatarPath);
+    } catch {
+      console.log("Avatar not found at", resolvedAvatarPath);
+    }
+  } else {
+    console.log("Avatar not found — checked", avatarFile, "with common extensions");
   }
+
+  const mimeType = resolvedAvatarPath?.match(/\.(jpg|jpeg)$/i) ? "image/jpeg" : "image/png";
 
   const svg = await satori(
     jsx("div", {
@@ -61,7 +74,7 @@ async function generateOGImage() {
                     color: "#000000",
                     letterSpacing: "-0.03em",
                   },
-                  children: DATA.name,
+                  children: resume.personal.name,
                 },
                 "name"
               ),
@@ -77,7 +90,7 @@ async function generateOGImage() {
                     marginTop: "24px",
                     maxWidth: "600px",
                   },
-                  children: DATA.description,
+                  children: resume.personal.description,
                 },
                 "description"
               ),
@@ -89,7 +102,7 @@ async function generateOGImage() {
           ? jsx(
               "img",
               {
-                src: `data:image/png;base64,${avatarBuffer.toString("base64")}`,
+                src: `data:${mimeType};base64,${avatarBuffer.toString("base64")}`,
                 style: {
                   width: "240px",
                   height: "240px",
