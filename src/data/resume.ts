@@ -143,7 +143,7 @@ export const resume: ResumeData = {
       },
       x: {
         name: "X",
-        url: "https://x.com/SaurabhGupta_42",
+        url: "https://x.com/saurabh42690",
         icon: "x",
         navbar: true,
       },
