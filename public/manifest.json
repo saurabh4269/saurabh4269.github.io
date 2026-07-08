@@ -1,0 +1,16 @@
+{
+  "name": "Saurabh Gupta",
+  "short_name": "Saurabh",
+  "description": "Co-Founder @Heisenbug | Building agentic compliance solutions | Obsessed with systems that work in the real world",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ]
+}

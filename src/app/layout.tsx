@@ -25,6 +25,47 @@ const geistMono = Geist_Mono({
 
 const ogImagePath = withBasePath("/og.png");
 
+const personJsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: resume.personal.name,
+  url: siteUrl,
+  image: `${siteUrl}${withBasePath(resume.personal.avatar)}`,
+  sameAs: [
+    "https://github.com/saurabh4269",
+    "https://www.linkedin.com/in/saurabhgupta0342/",
+    "https://x.com/saurabh42690",
+  ],
+  jobTitle: "Co-Founder & Software Engineer",
+  worksFor: {
+    "@type": "Organization",
+    name: "Heisenbug",
+    url: "https://www.heisenbug.ai/",
+  },
+  alumniOf: {
+    "@type": "CollegeOrUniversity",
+    name: "Indian Institute of Technology, Bombay",
+    url: "https://www.iitb.ac.in/",
+  },
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Mumbai",
+    addressRegion: "Maharashtra",
+    addressCountry: "IN",
+  },
+  knowsAbout: [
+    "Agentic AI",
+    "Privacy Engineering",
+    "Post-Quantum Cryptography",
+    "Autonomous Systems",
+    "Python",
+    "TypeScript",
+    "Next.js",
+    "Robotics",
+    "DPDP Compliance",
+  ],
+}).replace(/</g, "\\u003c");
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
@@ -32,6 +73,28 @@ export const metadata: Metadata = {
     template: `%s | ${resume.personal.name}`,
   },
   description: resume.personal.description,
+  keywords: [
+    "Saurabh Gupta",
+    "Saurabh Gupta IIT Bombay",
+    "Heisenbug",
+    "DPDP compliance startup",
+    "agentic AI",
+    "privacy engineering",
+    "post-quantum cryptography",
+    "GSoC 2026 OWASP",
+    "autonomous UAV",
+    "software engineer Mumbai",
+    "IIT Bombay student",
+    "co-founder India",
+    "zero-knowledge proofs",
+  ],
+  authors: [{ name: resume.personal.name, url: siteUrl }],
+  creator: resume.personal.name,
+  publisher: resume.personal.name,
+  alternates: {
+    canonical: siteUrl,
+  },
+  manifest: "/manifest.json",
   openGraph: {
     title: `${resume.personal.name}`,
     description: resume.personal.description,
@@ -62,9 +125,13 @@ export const metadata: Metadata = {
   twitter: {
     title: `${resume.personal.name}`,
     card: "summary_large_image",
+    creator: "@saurabh42690",
+    site: "@saurabh42690",
     images: [ogImagePath],
   },
 };
+
+export { personJsonLd };
 
 export default function RootLayout({
   children,
@@ -73,6 +140,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          type="application/ld+json"
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: personJsonLd }}
+        />
+      </head>
       <body
         className={cn(
           "min-h-screen bg-background font-sans antialiased relative",

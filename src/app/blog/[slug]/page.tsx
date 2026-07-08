@@ -52,12 +52,17 @@ export async function generateMetadata({
   return {
     title,
     description,
+    authors: [{ name: resume.personal.name, url: siteUrl }],
+    alternates: {
+      canonical: `${siteUrl}/blog/${slug}`,
+    },
     openGraph: {
       title,
       description,
       type: "article",
       publishedTime,
       url: `${siteUrl}/blog/${slug}`,
+      authors: [resume.personal.name],
       ...(image && {
         images: [
           {
@@ -70,6 +75,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title,
       description,
+      creator: "@saurabh42690",
       ...(image && {
         images: [`${siteUrl}${image}`],
       }),
