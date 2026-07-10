@@ -1,0 +1,65 @@
+---
+title: "My GSoC midterm on OWTF's MiTM proxy"
+publishedAt: "2026-07-10"
+updatedAt: "2026-07-10"
+author: "Saurabh Gupta"
+summary: "For my GSoC project on OWASP OWTF I set out to work on the MiTM proxy. While reading the code I found that HTTPS transactions are never recorded, and the first half of the program went into proving why, fixing the smaller bugs around it, and writing up a plan for the recording rewrite. Here is what I found and what I shipped."
+tags: ["GSoC", "Open Source", "OWASP", "Security", "Python", "Proxy"]
+---
+
+OWTF runs a MiTM proxy so it can record every request and response a target sees, and plugins then grep through that recorded history. So the recording is central to how the tool works.
+
+While reading the proxy for my GSoC project, I found that for HTTPS targets it records nothing. This post covers what I found and what I shipped for the midterm.
+
+## Reading the proxy first
+
+I applied to GSoC 2026 for OWTF's "MiTM Proxy Upgrade" project. Before writing the proposal I read the proxy code: `proxy.py`, `cache_handler.py`, `socket_wrapper.py`, `interceptor_manager.py`, and the transaction logger.
+
+Along the way I opened eight small fixes for things I found, before asking for the project ([#1405 through #1419](https://github.com/owtf/owtf/pulls?q=is%3Apr+author%3Asaurabh4269)): a `logging.warn()` that crashes on Python 3.12, a UTF-8 decode that silently kills plugins on binary tool output, and a SIGKILL escalation loop that was dead code because of an inverted condition. Each one meant reading a module closely enough to understand it.
+
+## Why HTTPS transactions are never recorded
+
+The recording pipeline works like this. When a request completes, `CacheHandler.dump()` writes the transaction to a JSON file and creates an empty `<hash>.rd` sentinel next to it. A separate process, `TransactionLogger`, polls for those `.rd` files and writes each one to PostgreSQL. So a transaction reaches the database only if some code path calls `CacheHandler.dump()`.
+
+Plain HTTP does: the request handler builds a `CacheHandler` and dumps it.
+
+The HTTPS path does not. `ProxyHandler.connect()` handles the `CONNECT` that browsers send for HTTPS. It writes `200 Connection established`, sets `self._finished = True`, wraps the sockets in TLS, and hands the two encrypted sockets to a raw `threading.Thread` running a `select` loop that forwards bytes in both directions.
+
+That thread never builds a `CacheHandler` and never writes a `.rd` file. I grepped the `connect()` method for `CacheHandler` and found zero references.
+
+So HTTPS transactions never reach the database, because no code records them. Since most real targets are HTTPS-only, the proxy's recorded history is effectively empty for the traffic that matters.
+
+There was an open issue for this, [#1287](https://github.com/owtf/owtf/issues/1287): "proxy at port 8008 not working properly, transaction table stays empty." It had the symptom but no root cause, so I wrote the root cause up and posted it with line references. It separates two problems: the empty table (architectural, since the tunnel needs to run inside the event loop before the decrypted stream can be parsed and recorded) and the intermittent TLS handshake failures (a blocking `socket.connect()` and a deprecated `ssl.PROTOCOL_TLS` in the loop).
+
+## Other proxy bugs I found
+
+- **`time.sleep()` inside a coroutine.** When live interception is on, the request handler polls for a decision in a loop and calls `time.sleep()` between checks. That blocks the entire Tornado event loop, so every other connection through the proxy stalls for up to 30 seconds. The fix is `yield tornado.gen.sleep()`, which yields instead of blocking.
+- **A response-interceptor chain that was never populated.** `add_interceptor()` only appended to the request list. The response list was sorted but never filled, so `intercept_response()` iterated an empty list and response modification did nothing, even though every interceptor implements it.
+- **An `except FileLockTimeoutException` catching a name that does not exist in the codebase.** Under lock contention that raises `NameError` instead of handling the timeout. The real exception is `FileLock.FileLockException`, which I found by reading the lock class rather than trusting the variable name.
+
+Each of these became its own single-purpose PR with a regression test, rather than one bundled change.
+
+## Realising the proxy was not the current priority
+
+I had a set of tested, ready-to-open PRs. Before opening them all, I looked at what the maintainers were actively working on: recent reviews, what got merged, what got closed. The proxy-modularity issue that my project was based on, [#913](https://github.com/owtf/owtf/issues/913), had been closed a few weeks earlier as *not planned*, to keep the roadmap focused. The active work was in the plugin subsystem, not the proxy.
+
+The closing note on #913 said a "fresh proposal against current develop would be the better place to pick it up." So instead of reopening it or opening every small PR at once, I anchored to the still-open bug (#1287), posted the diagnosis, and drafted a scoped, phased proposal. The plan routes HTTPS recording through the existing `CacheHandler` pipeline rather than adding a parallel one, and defaults response modification to off, since a security tool should not silently change what goes back to the target's browser.
+
+## What I shipped for the midterm
+
+- **The first unit tests for `CacheHandler`** ([#1446](https://github.com/owtf/owtf/pull/1446)): nine tests with no database, no running proxy, and no network, so they run in CI where the existing proxy tests (which need a live proxy and reach httpbin.org) cannot. Two are characterization tests that pin current bugs and are written to flip once the fixes land.
+- **The IOLoop-freeze fix** ([#1448](https://github.com/owtf/owtf/pull/1448)), with a test that asserts interleaving order rather than wall-clock timing, so it stays deterministic under CI load.
+- **The Python 3.12 and Tornado deprecation fixes** in proxy startup ([#1450](https://github.com/owtf/owtf/pull/1450)).
+- **The response-interceptor fix** ([#1452](https://github.com/owtf/owtf/pull/1452)), with a note about the behaviour it changes and an offer to gate it behind config.
+- **The #1287 root-cause diagnosis**, posted on the open issue.
+
+I did not claim to have fixed HTTPS recording, because I haven't. That needs the async rewrite of the `CONNECT` path. What I shipped was the diagnosis, the plan, and the pieces that are safe to land now.
+
+## What I took away
+
+- The `FileLockTimeoutException` bug looked like a missing import, but the name never existed anywhere. Reading the lock class is what showed the real exception.
+- Most of the fixes were small, but the value was in being able to point at the exact line and explain the behaviour.
+- The rewrite I proposed was not the maintainers' current focus, so I put the effort into proving one specific bug and writing a scoped plan rather than opening a large change.
+- I kept each fix as a separate, tested PR instead of bundling them.
+
+Thanks to my mentors, [Viyat Bhalodia](https://github.com/viyatb) and [Abraham Aranguren](https://github.com/7a), and to the OWTF maintainers for closing [#913](https://github.com/owtf/owtf/issues/913) clearly rather than leaving it open.
