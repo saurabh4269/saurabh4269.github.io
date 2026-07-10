@@ -15,7 +15,7 @@ While reading the proxy for my GSoC project, I found that for HTTPS targets it r
 
 I applied to GSoC 2026 for OWTF's "MiTM Proxy Upgrade" project. Before writing the proposal I read the proxy code: `proxy.py`, `cache_handler.py`, `socket_wrapper.py`, `interceptor_manager.py`, and the transaction logger.
 
-Along the way I opened eight small fixes for things I found, before asking for the project ([#1405 through #1419](https://github.com/owtf/owtf/pulls?q=is%3Apr+author%3Asaurabh4269)): a `logging.warn()` that crashes on Python 3.12, a UTF-8 decode that silently kills plugins on binary tool output, and a SIGKILL escalation loop that was dead code because of an inverted condition. Each one meant reading a module closely enough to understand it.
+Along the way I opened eight small fixes for things I found, before asking for the project ([#1405 through #1419](https://github.com/owtf/owtf/pulls?q=is%3Apr+author%3Asaurabh4269)): a deprecated `logging.warn()` call still in use instead of `logging.warning()`, a UTF-8 decode that silently kills plugins on binary tool output, and a SIGKILL escalation loop that was dead code because of an inverted condition. Each one meant reading a module closely enough to understand it.
 
 ## Why HTTPS transactions are never recorded
 
